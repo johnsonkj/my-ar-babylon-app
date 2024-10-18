@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/my-ar-babylon-app/static/css/main.e6c13ad2.css",
+    "main.js": "/my-ar-babylon-app/static/js/main.956b0d72.js",
+    "static/js/453.1812c530.chunk.js": "/my-ar-babylon-app/static/js/453.1812c530.chunk.js",
+    "index.html": "/my-ar-babylon-app/index.html",
+    "main.e6c13ad2.css.map": "/my-ar-babylon-app/static/css/main.e6c13ad2.css.map",
+    "main.956b0d72.js.map": "/my-ar-babylon-app/static/js/main.956b0d72.js.map",
+    "453.1812c530.chunk.js.map": "/my-ar-babylon-app/static/js/453.1812c530.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.956b0d72.js"
+  ]
+}

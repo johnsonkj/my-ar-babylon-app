@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
 import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
+import { AdvancedDynamicTexture, Button } from '@babylonjs/gui'; // Import GUI components
 import '@babylonjs/loaders'; // Babylon.js Loaders for loading glTF and glb
 
 const ARScene = () => {
@@ -11,7 +12,7 @@ const ARScene = () => {
   const canvasRef = useRef(null);
   
   const loadModel = useCallback(async () => {
-    if (!modelLoaded) { // Check if the model has already been loaded
+    if (!modelLoaded) {
       if (!canvasRef.current || !canvasRef.current.scene || canvasRef.current.scene.isDisposed) {
         console.error('Scene has been disposed, cannot load the model.');
         return;
@@ -22,30 +23,29 @@ const ARScene = () => {
           '',
           'https://johnsonkj.github.io/my-ar-babylon-app/nathan.glb',
           '',
-          canvasRef.current.scene // Pass the scene directly from the canvas reference
+          canvasRef.current.scene
         );
         modelRef.current = result.meshes[0];
         modelRef.current.position = new Vector3(0, -3.5, 8);
-        modelRef.current.scaling = new Vector3(0.05, 0.05, 0.05); // Use your desired initial scale
+        modelRef.current.scaling = new Vector3(0.05, 0.05, 0.05);
 
         if (result.animationGroups.length > 0) {
           animationGroupRef.current = result.animationGroups[0];
         }
-        setModelLoaded(true); // Update the state when model is loaded
+        setModelLoaded(true);
       } catch (error) {
         console.error('Error loading model:', error);
       }
     }
-  }, [modelLoaded]); // Add modelLoaded as a dependency
+  }, [modelLoaded]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const engine = new Engine(canvas, true);
     
     const scene = new Scene(engine);
-    canvas.scene = scene; // Attach scene to canvas reference for use in loadModel
+    canvas.scene = scene;
 
-    // Initial camera setup
     const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
     camera.attachControl(canvas, true);
     
@@ -58,7 +58,7 @@ const ARScene = () => {
         await helper.enterXRAsync('immersive-ar', 'local-floor');
         console.log('AR session started');
 
-        await loadModel(); // Call loadModel when the AR session starts
+        await loadModel();
 
         if (animationGroupRef.current) {
           animationGroupRef.current.start(true);
@@ -69,12 +69,25 @@ const ARScene = () => {
             console.log('AR session ended');
           });
         }
+
+        // Add BabylonJS GUI button on top of AR session
+        const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        const loadButton = Button.CreateSimpleButton("loadButton", "Load Animation Model");
+        loadButton.width = "150px";
+        loadButton.height = "40px";
+        loadButton.color = "white";
+        loadButton.background = "rgba(0, 150, 255, 0.8)";
+        loadButton.onPointerUpObservable.add(() => {
+          loadModel();
+        });
+
+        guiTexture.addControl(loadButton); // Add button to the AR session
+
       } catch (error) {
         console.error('Error starting AR session:', error);
       }
     };
 
-    // Auto-start the AR session when the app loads
     startARSession();
 
     engine.runRenderLoop(() => {
@@ -89,38 +102,15 @@ const ARScene = () => {
 
     return () => {
       if (scene && !scene.isDisposed) {
-        // scene.dispose(); // You can uncomment this if you want to dispose of the scene on unmount
+        // scene.dispose();
       }
       window.removeEventListener('resize', () => engine.resize());
     };
-  }, [loadModel]); // Include loadModel in the dependency array
-
-  const handleLoadModel = () => {
-    loadModel(); // Call the load model function on button click
-  };
+  }, [loadModel]);
 
   return (
     <>
       <canvas id="renderCanvas" ref={canvasRef} style={{ width: '100vw', height: '100vh' }} />
-
-      <button 
-  onClick={handleLoadModel} 
-  style={{
-    position: 'absolute', 
-    top: '10px', 
-    left: '10px', 
-    zIndex: 1, 
-    padding: '10px 20px', 
-    backgroundColor: 'rgba(0, 150, 255, 0.8)', 
-    color: 'white', 
-    border: 'none', 
-    borderRadius: '5px', 
-    cursor: 'pointer'
-  }}
->
-  Load Animation Model
-</button>
-
     </>
   );
 };

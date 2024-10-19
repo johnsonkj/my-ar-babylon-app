@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
-import { Vector3, HemisphericLight, ArcRotateCamera, MeshBuilder } from '@babylonjs/core';
-import '@babylonjs/loaders';
+import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader, AnimationGroup } from '@babylonjs/core';
+import '@babylonjs/loaders'; // Babylon.js Loaders for loading glTF and glb
 
 const ARScene = () => {
   useEffect(() => {
@@ -22,14 +22,34 @@ const ARScene = () => {
       const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
       light.intensity = 0.7;
 
-      // Create a sphere to visualize
-      const sphere = MeshBuilder.CreateSphere('sphere', { diameter: 2 }, scene);
-      sphere.position.y = 1; // Position the sphere above the ground
-
-      return { scene, sphere, camera }; // Return the scene, sphere, and camera
+      return { scene, camera }; // Return the scene and camera
     };
 
-    const { scene, sphere } = createScene();
+    const { scene } = createScene();
+
+    let model; // Variable to hold the loaded model
+    let animationGroup; // Variable to hold the animation group
+
+    // Load the GLB model from GitHub
+    const loadModel = async () => {
+      try {
+        const result = await SceneLoader.ImportMeshAsync(
+          '', // No mesh name filter
+          'https://johnsonkj.github.io/my-ar-babylon-app/nathan.glb', // URL to the hosted .glb model
+          '',
+          scene
+        );
+        model = result.meshes[0]; // Access the loaded model
+        model.position = new Vector3(0, 0, -5); // Position the model in AR space (5 units in front of camera
+
+        // If there's an animation group, store it
+        if (result.animationGroups.length > 0) {
+          animationGroup = result.animationGroups[0]; // Play the first animation group
+        }
+      } catch (error) {
+        console.error('Error loading model:', error);
+      }
+    };
 
     // Setup AR Button
     const xrButton = document.createElement('button');
@@ -54,18 +74,14 @@ const ARScene = () => {
         await helper.enterXRAsync('immersive-ar', 'local-floor');
         console.log('AR session started');
 
-        // Use the XR camera if available
-        const xrCamera = helper._nonVRCamera || helper.baseExperience.camera;
+        // Load the model if not loaded already
+        if (!model) {
+          await loadModel();
+        }
 
-        if (xrCamera) {
-          // Set the initial position of the sphere in AR space
-          const arPosition = new Vector3(0, 0, -5); // Position it 5 units in front of the camera
-          sphere.position = arPosition; // Set the sphere's position
-
-          // Optionally, set the sphere's rotation to match the camera's rotation
-          sphere.rotationQuaternion = xrCamera.rotationQuaternion; // Align rotation with camera
-        } else {
-          console.error('No camera available for AR session');
+        // If model and animation group exist, start the animation
+        if (animationGroup) {
+          animationGroup.start(true); // Play the animation looped
         }
 
         // Handle exit observable

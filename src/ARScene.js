@@ -29,7 +29,7 @@ const ARScene = () => {
 
     let model; // Variable to hold the loaded model
     let animationGroup; // Variable to hold the animation group
-    let initialScale = 0.1; // Initial model scale (reduce size)
+    let initialScale = 0.05; // Initial model scale (reduce size)
     let lastScale = initialScale;
     let lastRotation = 0;
 
@@ -43,7 +43,7 @@ const ARScene = () => {
           scene
         );
         model = result.meshes[0]; // Access the loaded model
-        model.position = new Vector3(0, 0, -5); // Position the model in AR space (5 units in front of the camera)
+        model.position = new Vector3(0, -3.5, 8); // Position the model in AR space (5 units in front of the camera)
         model.scaling = new Vector3(initialScale, initialScale, initialScale); // Scale down the model
 
         // If there's an animation group, store it

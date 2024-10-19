@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
-import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper'; // Correct import
+import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
 import { Vector3, HemisphericLight, ArcRotateCamera, MeshBuilder } from '@babylonjs/core';
-import '@babylonjs/loaders'; // Ensure you have loaders if you are loading models
+import '@babylonjs/loaders';
 
 const ARScene = () => {
   useEffect(() => {
@@ -22,14 +22,14 @@ const ARScene = () => {
       const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
       light.intensity = 0.7;
 
-      // Optional: add a basic sphere to visualize
+      // Create a sphere to visualize
       const sphere = MeshBuilder.CreateSphere('sphere', { diameter: 2 }, scene);
       sphere.position.y = 1;
 
-      return scene;
+      return { scene, sphere, camera }; // Return both the scene, sphere, and camera
     };
 
-    const scene = createScene();
+    const { scene, sphere } = createScene();
 
     // Setup AR Button
     const xrButton = document.createElement('button');
@@ -39,28 +39,46 @@ const ARScene = () => {
     xrButton.style.left = '10px';
     document.body.appendChild(xrButton);
 
-    xrButton.addEventListener('click', () => {
-      WebXRExperienceHelper.CreateAsync(scene).then((helper) => {
-        if (helper) {
-          // Start AR session
-          helper.enterXRAsync('immersive-ar', 'local-floor').then(() => {
-            console.log('AR session started');
-          });
-
-          // Handle exit observable
-          if (helper.onExitObservable) {
-            helper.onExitObservable.add(() => {
-              console.log('AR session ended');
-            });
-          } else {
-            console.error('onExitObservable is not defined');
-          }
-        } else {
-          console.error('WebXRExperienceHelper is undefined');
+    xrButton.addEventListener('click', async () => {
+      try {
+        // Create WebXR experience
+        const helper = await WebXRExperienceHelper.CreateAsync(scene);
+        if (!helper) {
+          console.error('WebXRExperienceHelper was not created.');
+          return;
         }
-      }).catch(error => {
-        console.error('Error creating WebXRExperienceHelper:', error);
-      });
+
+        console.log('WebXRExperienceHelper created:', helper);
+
+        // Start AR session
+        await helper.enterXRAsync('immersive-ar', 'local-floor');
+        console.log('AR session started');
+
+        // Use the XR camera if available
+        const xrCamera = helper._nonVRCamera || helper.baseExperience.camera;
+
+        if (xrCamera) {
+          // Make the sphere a child of the AR camera
+          sphere.parent = xrCamera; // Attach the sphere to the AR camera
+
+          // Position the sphere in front of the camera
+          sphere.position.z = 5; // Move it forward in AR space
+        } else {
+          console.error('No camera available for AR session');
+        }
+
+        // Handle exit observable
+        if (helper.onExitObservable) {
+          helper.onExitObservable.add(() => {
+            console.log('AR session ended');
+            sphere.parent = null; // Remove the sphere from the camera when AR session ends
+          });
+        } else {
+          console.error('onExitObservable is not defined');
+        }
+      } catch (error) {
+        console.error('Error starting AR session:', error);
+      }
     });
 
     // Render loop

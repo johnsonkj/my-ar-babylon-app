@@ -81,7 +81,7 @@ const ARScene = () => {
           loadModel();
         });
 
-        guiTexture.addControl(loadButton); // Add button to the AR session
+       // guiTexture.addControl(loadButton); // Add button to the AR session
 
       } catch (error) {
         console.error('Error starting AR session:', error);

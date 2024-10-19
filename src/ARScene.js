@@ -1,146 +1,86 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
 import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
 import '@babylonjs/loaders'; // Babylon.js Loaders for loading glTF and glb
 
 const ARScene = () => {
-  useEffect(() => {
-    const canvas = document.getElementById('renderCanvas');
-    const engine = new Engine(canvas, true);
+  const [modelLoaded, setModelLoaded] = useState(false); 
+  const modelRef = useRef(null);
+  const animationGroupRef = useRef(null);
+  const canvasRef = useRef(null);
+  
+  const loadModel = useCallback(async () => {
+    if (!modelLoaded) { // Check if the model has already been loaded
+      if (!canvasRef.current || !canvasRef.current.scene || canvasRef.current.scene.isDisposed) {
+        console.error('Scene has been disposed, cannot load the model.');
+        return;
+      }
 
-    const createScene = () => {
-      const scene = new Scene(engine);
-
-      const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
-      camera.attachControl(canvas, true);
-      
-      const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
-      light.intensity = 0.7;
-
-      return { scene, camera };
-    };
-
-    const { scene } = createScene();
-
-    let model;
-    let animationGroup;
-    let initialScale = 0.05;
-    let lastScale = initialScale;
-    let lastRotation = 0;
-
-    const loadModel = async () => {
       try {
         const result = await SceneLoader.ImportMeshAsync(
           '',
           'https://johnsonkj.github.io/my-ar-babylon-app/nathan.glb',
           '',
-          scene
+          canvasRef.current.scene // Pass the scene directly from the canvas reference
         );
-        model = result.meshes[0];
-        model.position = new Vector3(0, -3.5, 8);
-        model.scaling = new Vector3(initialScale, initialScale, initialScale);
+        modelRef.current = result.meshes[0];
+        modelRef.current.position = new Vector3(0, -3.5, 8);
+        modelRef.current.scaling = new Vector3(0.05, 0.05, 0.05); // Use your desired initial scale
 
         if (result.animationGroups.length > 0) {
-          animationGroup = result.animationGroups[0];
+          animationGroupRef.current = result.animationGroups[0];
         }
+        setModelLoaded(true); // Update the state when model is loaded
       } catch (error) {
         console.error('Error loading model:', error);
       }
-    };
+    }
+  }, [modelLoaded]); // Add modelLoaded as a dependency
 
-    let initialDistance = null;
-    let initialAngle = null;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const engine = new Engine(canvas, true);
+    
+    const scene = new Scene(engine);
+    canvas.scene = scene; // Attach scene to canvas reference for use in loadModel
 
-    const onTouchMove = (event) => {
-      if (event.touches.length === 2 && model) {
-        const [touch1, touch2] = event.touches;
-        const currentDistance = Math.hypot(
-          touch1.clientX - touch2.clientX,
-          touch1.clientY - touch2.clientY
-        );
+    // Initial camera setup
+    const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
+    camera.attachControl(canvas, true);
+    
+    const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
+    light.intensity = 0.7;
 
-        if (initialDistance !== null) {
-          const scaleChange = currentDistance / initialDistance;
-          const newScale = lastScale * scaleChange;
-          model.scaling = new Vector3(newScale, newScale, newScale);
-        } else {
-          initialDistance = currentDistance;
-        }
-
-        const currentAngle = Math.atan2(
-          touch2.clientY - touch1.clientY,
-          touch2.clientX - touch1.clientX
-        );
-
-        if (initialAngle !== null) {
-          const angleChange = currentAngle - initialAngle;
-          model.rotation.y = lastRotation + angleChange;
-        } else {
-          initialAngle = currentAngle;
-        }
-      }
-    };
-
-    const onTouchEnd = () => {
-      initialDistance = null;
-      initialAngle = null;
-      if (model) {
-        lastScale = model.scaling.x;
-        lastRotation = model.rotation.y;
-      }
-    };
-
-    const addTouchListeners = () => {
-      canvas.addEventListener('touchmove', onTouchMove);
-      canvas.addEventListener('touchend', onTouchEnd);
-      canvas.addEventListener('touchcancel', onTouchEnd);
-    };
-
-    const removeTouchListeners = () => {
-      canvas.removeEventListener('touchmove', onTouchMove);
-      canvas.removeEventListener('touchend', onTouchEnd);
-      canvas.removeEventListener('touchcancel', onTouchEnd);
-    };
-
-    const xrButton = document.createElement('button');
-    xrButton.innerText = 'Open AR';
-    xrButton.style.position = 'absolute';
-    xrButton.style.top = '10px';
-    xrButton.style.left = '10px';
-    document.body.appendChild(xrButton);
-
-    xrButton.addEventListener('click', async () => {
+    const startARSession = async () => {
       try {
         const helper = await WebXRExperienceHelper.CreateAsync(scene);
-
         await helper.enterXRAsync('immersive-ar', 'local-floor');
         console.log('AR session started');
 
-        if (!model) {
-          await loadModel();
-        }
+        await loadModel(); // Call loadModel when the AR session starts
 
-        if (animationGroup) {
-          animationGroup.start(true);
+        if (animationGroupRef.current) {
+          animationGroupRef.current.start(true);
         }
-
-        // Add touch listeners for interactions in AR mode
-        addTouchListeners();
 
         if (helper.onExitObservable) {
           helper.onExitObservable.add(() => {
             console.log('AR session ended');
-            removeTouchListeners(); // Clean up listeners when AR session ends
           });
         }
       } catch (error) {
         console.error('Error starting AR session:', error);
       }
-    });
+    };
+
+    // Auto-start the AR session when the app loads
+    startARSession();
 
     engine.runRenderLoop(() => {
-      scene.render();
+      if (scene && !scene.isDisposed) {
+        scene.render();
+      }
     });
 
     window.addEventListener('resize', () => {
@@ -148,15 +88,40 @@ const ARScene = () => {
     });
 
     return () => {
-      engine.dispose();
-      removeTouchListeners();
+      if (scene && !scene.isDisposed) {
+        // scene.dispose(); // You can uncomment this if you want to dispose of the scene on unmount
+      }
       window.removeEventListener('resize', () => engine.resize());
-      document.body.removeChild(xrButton);
     };
-  }, []);
+  }, [loadModel]); // Include loadModel in the dependency array
+
+  const handleLoadModel = () => {
+    loadModel(); // Call the load model function on button click
+  };
 
   return (
-    <canvas id="renderCanvas" style={{ width: '100%', height: '100%' }} />
+    <>
+      <canvas id="renderCanvas" ref={canvasRef} style={{ width: '100vw', height: '100vh' }} />
+
+      <button 
+  onClick={handleLoadModel} 
+  style={{
+    position: 'absolute', 
+    top: '10px', 
+    left: '10px', 
+    zIndex: 1, 
+    padding: '10px 20px', 
+    backgroundColor: 'rgba(0, 150, 255, 0.8)', 
+    color: 'white', 
+    border: 'none', 
+    borderRadius: '5px', 
+    cursor: 'pointer'
+  }}
+>
+  Load Animation Model
+</button>
+
+    </>
   );
 };
 

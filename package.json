@@ -19,7 +19,8 @@
     "react-babylonjs": "^3.2.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "webxr-polyfill": "^2.0.3"
   },
   "scripts": {
     "start": "react-scripts start",

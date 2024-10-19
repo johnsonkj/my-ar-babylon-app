@@ -1,13 +1,14 @@
+// src/App.js
 import React from 'react';
-import ARComponent from './ARComponent';
+import ARScene from './ARScene';
+import './App.css'; // Optional: You can add your styles here
 
-function App() {
+const App = () => {
   return (
     <div>
-      <h1>AR Experience</h1>
-      <ARComponent />
+      <ARScene />
     </div>
   );
-}
+};
 
 export default App;

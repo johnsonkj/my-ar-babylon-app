@@ -25,6 +25,15 @@ const ARComponent = () => {
       const model = result.meshes[0];
       model.scaling.scaleInPlace(0.1); // Scale the model down if needed
 
+      // Add event listeners to handle XR session
+      xrHelper.onXRSessionStartedObservable.add(() => {
+        console.log("XR Session started");
+      });
+
+      xrHelper.onXRSessionEndedObservable.add(() => {
+        console.log("XR Session ended");
+      });
+
       // Run the engine render loop
       engine.runRenderLoop(() => {
         scene.render();

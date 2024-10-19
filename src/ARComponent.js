@@ -1,38 +1,27 @@
-// ARComponent.js
-import React, { useEffect } from 'react';
-import { Engine, Scene, Vector3 } from '@babylonjs/core';
+import React, { useEffect, useRef } from 'react';
+import { Engine, Scene, Vector3, Color4 } from '@babylonjs/core';
 import '@babylonjs/loaders';
-import { WebXRExperienceHelper, WebXRCamera, SceneLoader } from '@babylonjs/core';
+import { WebXRExperienceHelper } from '@babylonjs/core';
+import { SceneLoader } from '@babylonjs/core';
 
 const ARComponent = () => {
+  const canvasRef = useRef(null);
+
   useEffect(() => {
-    const createScene = async (canvas) => {
+    const createScene = async (xrHelper) => {
       // Create BabylonJS engine and scene
-      const engine = new Engine(canvas, true);
+      const engine = new Engine(canvasRef.current, true);
       const scene = new Scene(engine);
 
-      // Add a WebXR camera
-      const camera = new WebXRCamera('WebXR', new Vector3(0, 1, -1), scene);
-      scene.addCamera(camera);
-
-      // Enable WebXR experience
-      const xrHelper = await WebXRExperienceHelper.CreateAsync(scene);
-      xrHelper.enableFeature(WebXRExperienceHelper.GPS, '1.0.0'); // Enable GPS feature
+      // Set a clear color for the scene
+      scene.clearColor = new Color4(0, 0, 0, 0); // Transparent background for AR
 
       // Load a model
       const modelUrl = 'https://johnsonkj.github.io/my-ar-babylon-app/nathan.glb'; // Replace with your model URL
       const result = await SceneLoader.ImportMeshAsync(null, modelUrl, '', scene);
       const model = result.meshes[0];
       model.scaling.scaleInPlace(0.1); // Scale the model down if needed
-
-      // Add event listeners to handle XR session
-      xrHelper.onXRSessionStartedObservable.add(() => {
-        console.log("XR Session started");
-      });
-
-      xrHelper.onXRSessionEndedObservable.add(() => {
-        console.log("XR Session ended");
-      });
+      model.position = new Vector3(0, 0, 0); // Position the model in the center
 
       // Run the engine render loop
       engine.runRenderLoop(() => {
@@ -43,21 +32,36 @@ const ARComponent = () => {
       window.addEventListener('resize', () => {
         engine.resize();
       });
+
+      // Cleanup on unmount
+      return () => {
+        window.removeEventListener('resize', () => {
+          engine.resize();
+        });
+        engine.dispose();
+      };
     };
 
-    const canvas = document.getElementById('renderCanvas');
-    createScene(canvas);
+    const requestARSession = async () => {
+      if (navigator.xr) {
+        try {
+          const session = await navigator.xr.requestSession('immersive-ar');
+          const xrHelper = await WebXRExperienceHelper.CreateAsync(session);
 
-    // Cleanup on unmount
-    return () => {
-      if (canvas) {
-        canvas.width = 0;
-        canvas.height = 0;
+          // Start the scene with the created XR helper
+          createScene(xrHelper);
+        } catch (err) {
+          console.error('Failed to start AR session:', err);
+        }
+      } else {
+        console.error('WebXR not supported');
       }
     };
+
+    requestARSession();
   }, []);
 
-  return <canvas id="renderCanvas" style={{ width: '100%', height: '100vh' }}></canvas>;
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
 };
 
 export default ARComponent;

@@ -24,9 +24,9 @@ const ARScene = () => {
 
       // Create a sphere to visualize
       const sphere = MeshBuilder.CreateSphere('sphere', { diameter: 2 }, scene);
-      sphere.position.y = 1;
+      sphere.position.y = 1; // Position the sphere above the ground
 
-      return { scene, sphere, camera }; // Return both the scene, sphere, and camera
+      return { scene, sphere, camera }; // Return the scene, sphere, and camera
     };
 
     const { scene, sphere } = createScene();
@@ -58,11 +58,12 @@ const ARScene = () => {
         const xrCamera = helper._nonVRCamera || helper.baseExperience.camera;
 
         if (xrCamera) {
-          // Make the sphere a child of the AR camera
-          sphere.parent = xrCamera; // Attach the sphere to the AR camera
+          // Set the initial position of the sphere in AR space
+          const arPosition = new Vector3(0, 0, -5); // Position it 5 units in front of the camera
+          sphere.position = arPosition; // Set the sphere's position
 
-          // Position the sphere in front of the camera
-          sphere.position.z = 5; // Move it forward in AR space
+          // Optionally, set the sphere's rotation to match the camera's rotation
+          sphere.rotationQuaternion = xrCamera.rotationQuaternion; // Align rotation with camera
         } else {
           console.error('No camera available for AR session');
         }
@@ -71,7 +72,6 @@ const ARScene = () => {
         if (helper.onExitObservable) {
           helper.onExitObservable.add(() => {
             console.log('AR session ended');
-            sphere.parent = null; // Remove the sphere from the camera when AR session ends
           });
         } else {
           console.error('onExitObservable is not defined');

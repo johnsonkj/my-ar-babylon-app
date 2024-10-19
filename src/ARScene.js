@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { Engine, Scene } from '@babylonjs/core';
-import '@babylonjs/core/Legacy/legacy'; // For basic XR support
-
+import { Engine, Scene, FreeCamera, Vector3, HemisphericLight } from '@babylonjs/core';
+import '@babylonjs/core/Legacy/legacy'; // Importing the legacy module for basic XR support
 
 const ARScene = () => {
   useEffect(() => {
@@ -10,7 +9,16 @@ const ARScene = () => {
 
     const createScene = () => {
       const scene = new Scene(engine);
-      // Set up the scene (lighting, camera, etc.) here
+
+      // Create a camera
+      const camera = new FreeCamera("camera1", new Vector3(0, 1, -5), scene);
+      camera.setTarget(Vector3.Zero());
+      camera.attachControl(canvas, true); // Allow user to control the camera with mouse or touch
+
+      // Create a light
+      const light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
+      light.intensity = 0.7;
+
       return scene;
     };
 
@@ -32,7 +40,6 @@ const ARScene = () => {
                 // Create the XR experience
                 const xrHelper = scene.createDefaultXRExperienceAsync({
                   floorMeshes: [], // Optionally specify floor meshes
-                  // You can add other configurations here
                 });
 
                 session.addEventListener('end', () => {

@@ -1,71 +1,90 @@
 import React, { useEffect } from 'react';
-import { Engine, Scene, FreeCamera, Vector3, HemisphericLight } from '@babylonjs/core';
-import '@babylonjs/core/Legacy/legacy'; // Importing the legacy module for basic XR support
+import { Engine, Scene } from '@babylonjs/core';
+import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper'; // Correct import
+import { Vector3, HemisphericLight, ArcRotateCamera, MeshBuilder } from '@babylonjs/core';
+import '@babylonjs/loaders'; // Ensure you have loaders if you are loading models
 
 const ARScene = () => {
   useEffect(() => {
+    // Create the canvas and engine
     const canvas = document.getElementById('renderCanvas');
     const engine = new Engine(canvas, true);
 
+    // Create a basic scene
     const createScene = () => {
       const scene = new Scene(engine);
 
-      // Create a camera
-      const camera = new FreeCamera("camera1", new Vector3(0, 1, -5), scene);
-      camera.setTarget(Vector3.Zero());
-      camera.attachControl(canvas, true); // Allow user to control the camera with mouse or touch
-
-      // Create a light
-      const light = new HemisphericLight("light1", new Vector3(0, 1, 0), scene);
+      // Add a camera
+      const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
+      camera.attachControl(canvas, true);
+      
+      // Add a light
+      const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
       light.intensity = 0.7;
+
+      // Optional: add a basic sphere to visualize
+      const sphere = MeshBuilder.CreateSphere('sphere', { diameter: 2 }, scene);
+      sphere.position.y = 1;
 
       return scene;
     };
 
     const scene = createScene();
 
-    // Check if XR is supported
-    if (navigator.xr) {
-      navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-        if (supported) {
-          // Create a button to start AR
-          const xrButton = document.createElement('button');
-          xrButton.innerText = 'Start AR';
-          document.body.appendChild(xrButton);
+    // Setup AR Button
+    const xrButton = document.createElement('button');
+    xrButton.innerText = 'Open AR';
+    xrButton.style.position = 'absolute';
+    xrButton.style.top = '10px';
+    xrButton.style.left = '10px';
+    document.body.appendChild(xrButton);
 
-          xrButton.addEventListener('click', () => {
-            navigator.xr
-              .requestSession('immersive-ar')
-              .then((session) => {
-                // Create the XR experience
-                const xrHelper = scene.createDefaultXRExperienceAsync({
-                  floorMeshes: [], // Optionally specify floor meshes
-                });
-
-                session.addEventListener('end', () => {
-                  // Handle session end
-                  xrHelper.exitXR();
-                });
-              });
+    xrButton.addEventListener('click', () => {
+      WebXRExperienceHelper.CreateAsync(scene).then((helper) => {
+        if (helper) {
+          // Start AR session
+          helper.enterXRAsync('immersive-ar', 'local-floor').then(() => {
+            console.log('AR session started');
           });
-        } else {
-          console.error('AR not supported on this device.');
-        }
-      });
-    } else {
-      console.error('WebXR not supported in this browser.');
-    }
 
+          // Handle exit observable
+          if (helper.onExitObservable) {
+            helper.onExitObservable.add(() => {
+              console.log('AR session ended');
+            });
+          } else {
+            console.error('onExitObservable is not defined');
+          }
+        } else {
+          console.error('WebXRExperienceHelper is undefined');
+        }
+      }).catch(error => {
+        console.error('Error creating WebXRExperienceHelper:', error);
+      });
+    });
+
+    // Render loop
     engine.runRenderLoop(() => {
       scene.render();
     });
 
+    // Resize event
+    window.addEventListener('resize', () => {
+      engine.resize();
+    });
+
     return () => {
       engine.dispose();
+      window.removeEventListener('resize', () => {
+        engine.resize();
+      });
+      document.body.removeChild(xrButton);
     };
   }, []);
 
-  return <canvas id="renderCanvas" style={{ width: '100%', height: '100%' }} />;
+  return (
+    <canvas id="renderCanvas" style={{ width: '100%', height: '100%' }} />
+  );
 };
 
 export default ARScene;

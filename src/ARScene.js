@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
-import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader, AnimationGroup } from '@babylonjs/core';
+import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
 import '@babylonjs/loaders'; // Babylon.js Loaders for loading glTF and glb
 
 const ARScene = () => {
@@ -29,6 +29,9 @@ const ARScene = () => {
 
     let model; // Variable to hold the loaded model
     let animationGroup; // Variable to hold the animation group
+    let initialScale = 0.1; // Initial model scale (reduce size)
+    let lastScale = initialScale;
+    let lastRotation = 0;
 
     // Load the GLB model from GitHub
     const loadModel = async () => {
@@ -40,7 +43,8 @@ const ARScene = () => {
           scene
         );
         model = result.meshes[0]; // Access the loaded model
-        model.position = new Vector3(0, 0, -5); // Position the model in AR space (5 units in front of camera
+        model.position = new Vector3(0, 0, -5); // Position the model in AR space (5 units in front of the camera)
+        model.scaling = new Vector3(initialScale, initialScale, initialScale); // Scale down the model
 
         // If there's an animation group, store it
         if (result.animationGroups.length > 0) {
@@ -50,6 +54,56 @@ const ARScene = () => {
         console.error('Error loading model:', error);
       }
     };
+
+    // Pinch and rotate gestures logic
+    let initialDistance = null;
+    let initialAngle = null;
+
+    const onTouchMove = (event) => {
+      if (event.touches.length === 2 && model) {
+        // Get current positions of both touches
+        const [touch1, touch2] = event.touches;
+        const currentDistance = Math.hypot(
+          touch1.clientX - touch2.clientX,
+          touch1.clientY - touch2.clientY
+        );
+
+        // Pinch-to-zoom
+        if (initialDistance !== null) {
+          const scaleChange = currentDistance / initialDistance;
+          const newScale = lastScale * scaleChange;
+          model.scaling = new Vector3(newScale, newScale, newScale); // Adjust the model’s scale
+        } else {
+          initialDistance = currentDistance;
+        }
+
+        // Twist-to-rotate
+        const currentAngle = Math.atan2(
+          touch2.clientY - touch1.clientY,
+          touch2.clientX - touch1.clientX
+        );
+
+        if (initialAngle !== null) {
+          const angleChange = currentAngle - initialAngle;
+          model.rotation.y = lastRotation + angleChange; // Rotate the model along the Y-axis
+        } else {
+          initialAngle = currentAngle;
+        }
+      }
+    };
+
+    const onTouchEnd = () => {
+      // Reset values when touch ends
+      initialDistance = null;
+      initialAngle = null;
+      lastScale = model.scaling.x; // Store the last scale
+      lastRotation = model.rotation.y; // Store the last rotation
+    };
+
+    // Add touch event listeners
+    canvas.addEventListener('touchmove', onTouchMove);
+    canvas.addEventListener('touchend', onTouchEnd);
+    canvas.addEventListener('touchcancel', onTouchEnd);
 
     // Setup AR Button
     const xrButton = document.createElement('button');
@@ -109,6 +163,9 @@ const ARScene = () => {
 
     return () => {
       engine.dispose();
+      canvas.removeEventListener('touchmove', onTouchMove);
+      canvas.removeEventListener('touchend', onTouchEnd);
+      canvas.removeEventListener('touchcancel', onTouchEnd);
       window.removeEventListener('resize', () => {
         engine.resize();
       });

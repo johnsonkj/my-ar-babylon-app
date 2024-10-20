@@ -19,16 +19,11 @@ const ARScene = () => {
           const engine = new Engine(canvas, true);
           const scene = new Scene(engine);
 
-          // Create XR camera
-          const camera_XR = new FreeCamera("camera_XR", new Vector3(0, 1, -5), scene);
-          camera_XR.setTarget(Vector3.Zero());
-          camera_XR.attachControl(canvas, false);
-
-         
-          // Lighting
-          new HemisphericLight("light", new Vector3(0, 1, 0), scene).intensity = 0.7;
-          const dirLight = new DirectionalLight("dirlight", new Vector3(0, -1, -0.5), scene);
-          dirLight.position = new Vector3(0, 5, -5);
+          // Setup camera and light
+      const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
+      camera.attachControl(canvas, true);
+      const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
+      light.intensity = 0.7;
 
           // GUI
           const advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -59,10 +54,16 @@ const ARScene = () => {
           panel.addControl(button_set);
 
           // XR Experience
-          const helper = await WebXRExperienceHelper.CreateAsync(scene);
-      await helper.enterXRAsync('immersive-ar', 'local-floor');
-      console.log('AR session started');
-
+          const xr = await scene.createDefaultXRExperienceAsync({
+              uiOptions: {
+                  sessionMode: "immersive-ar",
+                  referenceSpaceType: "local-floor",
+                  onError: (error) => {
+                      alert(error);
+                  }
+              },
+              optionalFeatures: true
+          });
 
         
           // Load Model

@@ -66,25 +66,6 @@ const ARScene = () => {
           });
 
         
-          // Load Model
-          const model = await SceneLoader.ImportMeshAsync("", "https://johnsonkj.github.io/my-ar-babylon-app/", "nathan.glb", scene);
-          const b = model.meshes[0];
-          b.scalingDeterminant = 4;
-
-          
-          
-
-         
-          b.rotationQuaternion = new Quaternion();
-          b.setEnabled(true);
-         
-          button_set.isVisible = true;
-
-        
-
-         
-         
-
         
           engine.runRenderLoop(() => {
               if (scene) {

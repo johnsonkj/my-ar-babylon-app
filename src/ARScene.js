@@ -10,6 +10,7 @@ const ARScene = () => {
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
   const buttonRef = useRef(null);
+  const [arEnabled, setArEnabled] = useState(false); 
 
   const loadModel = useCallback(async () => {
     if (!modelLoaded) {
@@ -59,6 +60,21 @@ const ARScene = () => {
 
       guiTexture.addControl(panel);
 
+      const xr = await scene.createDefaultXRExperienceAsync({
+        uiOptions: {
+            sessionMode: "immersive-ar",
+            referenceSpaceType: "local-floor",
+            onError: (error) => {
+                alert(error);
+            }
+        },
+        optionalFeatures: true
+    });
+
+    xr.onEnterXRObservable.add(() => {
+        setArEnabled(true); // Enable the "Load Model" button when AR starts
+      });
+
       // Button to load the model
       const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
       loadButton.width = "400px";
@@ -82,18 +98,11 @@ const ARScene = () => {
           loadButton.background = "#007900";
         }
       });
-      panel.addControl(loadButton);
+      if (arEnabled) {
+          panel.addControl(loadButton);
+        }
       // XR Experience
-     const xr = await scene.createDefaultXRExperienceAsync({
-        uiOptions: {
-            sessionMode: "immersive-ar",
-            referenceSpaceType: "local-floor",
-            onError: (error) => {
-                alert(error);
-            }
-        },
-        optionalFeatures: true
-    });
+     
 
       engine.runRenderLoop(() => {
         if (scene && !scene.isDisposed) {
@@ -113,7 +122,7 @@ const ARScene = () => {
       console.error('Error starting AR session:', error);
     }
   };
-  const scene = createScene();
+ createScene();
 }, []);
   return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
 };

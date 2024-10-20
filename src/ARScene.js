@@ -68,7 +68,7 @@ const ARScene = () => {
       loadButton.onPointerUpObservable.add(() => {
         loadModel();
       });
-     // guiTexture.addControl(loadButton);
+      guiTexture.addControl(loadButton);
 
       engine.runRenderLoop(() => {
         if (scene && !scene.isDisposed) {

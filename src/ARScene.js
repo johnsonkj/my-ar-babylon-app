@@ -71,10 +71,16 @@ const ARScene = () => {
 
       arButton.onPointerUpObservable.add(async () => {
         try {
-            const helper = await WebXRExperienceHelper.CreateAsync(scene);
-            await helper.enterXRAsync('immersive-ar', 'local-floor');
-            console.log('AR session started');
-
+            const xr = await scene.createDefaultXRExperienceAsync({
+                uiOptions: {
+                  sessionMode: "immersive-ar",
+                  referenceSpaceType: "local-floor",
+                  onError: (error) => {
+                    alert(error);
+                  },
+                },
+                optionalFeatures: true,
+              });
           
           panel.removeControl(arButton);
           panel.addControl(loadButton);

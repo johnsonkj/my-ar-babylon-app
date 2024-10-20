@@ -96,7 +96,7 @@ const ARScene = () => {
     <>
       <canvas id="renderCanvas" ref={canvasRef} style={{ width: '100vw', height: '100vh' }} />
 
-      {!arStarted && (
+      
         <button
           onClick={startARSession}
           style={{
@@ -114,7 +114,7 @@ const ARScene = () => {
         >
           Start AR
         </button>
-      )}
+      )
     </>
   );
 };

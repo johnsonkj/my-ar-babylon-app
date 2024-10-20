@@ -101,7 +101,7 @@ const ARScene = () => {
          },
          optionalFeatures: true,
        });
-       
+       console.log('AR session started');
        
       
 

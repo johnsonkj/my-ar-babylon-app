@@ -9,8 +9,8 @@ const ARScene = () => {
   const [modelLoaded, setModelLoaded] = useState(false);
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
-  const buttonRef = useRef(null);
-  const [arEnabled, setArEnabled] = useState(false); 
+ 
+  
 
   const loadModel = useCallback(async () => {
     if (!modelLoaded) {
@@ -60,20 +60,32 @@ const ARScene = () => {
 
       guiTexture.addControl(panel);
 
-      const xr = await scene.createDefaultXRExperienceAsync({
-        uiOptions: {
-            sessionMode: "immersive-ar",
-            referenceSpaceType: "local-floor",
-            onError: (error) => {
-                alert(error);
-            }
-        },
-        optionalFeatures: true
-    });
+      // Custom button to enter AR
+      const arButton = Button.CreateSimpleButton("arButton", "Enter AR");
+      arButton.width = "400px";
+      arButton.height = "150px";
+      arButton.thickness = 10;
+      arButton.cornerRadius = 150;
+      arButton.color = "#FF7979";
+      arButton.background = "#007900";
 
-    xr.onEnterXRObservable.add(() => {
-        setArEnabled(true); // Enable the "Load Model" button when AR starts
+      arButton.onPointerUpObservable.add(async () => {
+        try {
+            const helper = await WebXRExperienceHelper.CreateAsync(scene);
+            await helper.enterXRAsync('immersive-ar', 'local-floor');
+            console.log('AR session started');
+
+          
+          panel.removeControl(arButton);
+          panel.addControl(loadButton);
+
+        } catch (error) {
+          console.error('Error starting AR session:', error);
+        }
       });
+
+      panel.addControl(arButton); // Add AR button to the panel
+
 
       // Button to load the model
       const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
@@ -98,9 +110,7 @@ const ARScene = () => {
           loadButton.background = "#007900";
         }
       });
-      if (arEnabled) {
-          panel.addControl(loadButton);
-        }
+      
       // XR Experience
      
 

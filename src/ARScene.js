@@ -53,7 +53,7 @@ const ARScene = () => {
      
 
       // BabylonJS GUI for button interaction
-      const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+      const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
       const panel = new StackPanel();
       panel.verticalAlignment = 1;
       panel.top = "-20px";
@@ -71,16 +71,12 @@ const ARScene = () => {
 
       arButton.onPointerUpObservable.add(async () => {
         try {
-            const xr = await scene.createDefaultXRExperienceAsync({
-                uiOptions: {
-                  sessionMode: "immersive-ar",
-                  referenceSpaceType: "local-floor",
-                  onError: (error) => {
-                    alert(error);
-                  },
-                },
-                optionalFeatures: true,
-              });
+           // Create WebXRExperienceHelper directly
+           const helper = await WebXRExperienceHelper.CreateAsync(scene);
+
+           // Immediately enter AR without any additional UI
+           await helper.enterXRAsync('immersive-ar', 'local-floor');
+           console.log('AR session started');
           
           panel.removeControl(arButton);
           panel.addControl(loadButton);

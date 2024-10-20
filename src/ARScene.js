@@ -4,7 +4,6 @@ import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper'
 import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
 import { AdvancedDynamicTexture, Button } from '@babylonjs/gui';
 import '@babylonjs/loaders';
-import { WebXRFeatureName } from '@babylonjs/core/XR/webXRFeaturesManager'; // Import for WebXRFeatureName
 
 const ARScene = () => {
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -53,22 +52,14 @@ const ARScene = () => {
       const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
       light.intensity = 0.7;
 
-      // Create WebXR session with pointer selection enabled
+      // Create WebXR session without pointer selection for mobile AR
       const helper = await WebXRExperienceHelper.CreateAsync(scene);
-      const featuresManager = helper.featuresManager;
-
-      // Enable pointer selection feature for interaction in AR
-      featuresManager.enableFeature(
-        WebXRFeatureName.POINTER_SELECTION, 
-        'latest', 
-        { xrInput: helper.input }
-      );
 
       // Start immersive AR session
       await helper.enterXRAsync('immersive-ar', 'local-floor');
       console.log('AR session started');
 
-      // Add BabylonJS GUI button inside AR session
+      // Add BabylonJS GUI button inside AR session for touch-based interaction
       const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
       const loadButton = Button.CreateSimpleButton("loadButton", "Load Animation Model");
       loadButton.width = "250px";

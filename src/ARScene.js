@@ -61,8 +61,8 @@ const ARScene = () => {
       // Add BabylonJS GUI button inside AR session
       const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
       const loadButton = Button.CreateSimpleButton("loadButton", "Load Animation Model");
-      loadButton.width = "150px";
-      loadButton.height = "40px";
+      loadButton.width = "250px";
+      loadButton.height = "140px";
       loadButton.color = "white";
       loadButton.background = "rgba(0, 150, 255, 0.8)";
       loadButton.onPointerUpObservable.add(() => {

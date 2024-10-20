@@ -59,16 +59,10 @@ const ARScene = () => {
           panel.addControl(button_set);
 
           // XR Experience
-          const xr = await scene.createDefaultXRExperienceAsync({
-              uiOptions: {
-                  sessionMode: "immersive-ar",
-                  referenceSpaceType: "local-floor",
-                  onError: (error) => {
-                      alert(error);
-                  }
-              },
-              optionalFeatures: true
-          });
+          const helper = await WebXRExperienceHelper.CreateAsync(scene);
+      await helper.enterXRAsync('immersive-ar', 'local-floor');
+      console.log('AR session started');
+
 
         
           // Load Model
@@ -85,13 +79,7 @@ const ARScene = () => {
          
           button_set.isVisible = true;
 
-          // XR Session Handling
-          xr.baseExperience.sessionManager.onXRSessionInit.add(() => {
-              b.rotationQuaternion = new Quaternion();
-              b.scalingDeterminant = 0.2;
-              b.setEnabled(false);
-              button_set.isVisible = true;
-          });
+        
 
          
          

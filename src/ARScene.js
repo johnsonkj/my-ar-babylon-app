@@ -60,34 +60,6 @@ const ARScene = () => {
 
       guiTexture.addControl(panel);
 
-      // Custom button to enter AR
-      const arButton = Button.CreateSimpleButton("arButton", "Enter AR");
-      arButton.width = "400px";
-      arButton.height = "150px";
-      arButton.thickness = 10;
-      arButton.cornerRadius = 150;
-      arButton.color = "#FF7979";
-      arButton.background = "#007900";
-
-      arButton.onPointerUpObservable.add(async () => {
-        try {
-           // Create WebXRExperienceHelper directly
-           const helper = await WebXRExperienceHelper.CreateAsync(scene);
-
-           // Immediately enter AR without any additional UI
-           await helper.enterXRAsync('immersive-ar', 'local-floor');
-           console.log('AR session started');
-          
-          panel.removeControl(arButton);
-          panel.addControl(loadButton);
-
-        } catch (error) {
-          console.error('Error starting AR session:', error);
-        }
-      });
-
-      panel.addControl(arButton); // Add AR button to the panel
-
 
       // Button to load the model
       const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
@@ -112,8 +84,30 @@ const ARScene = () => {
           loadButton.background = "#007900";
         }
       });
+
+      panel.addControl(loadButton);
       
       // XR Experience
+
+      try {
+        // Create WebXRExperienceHelper directly
+        const xr = await scene.createDefaultXRExperienceAsync({
+         uiOptions: {
+           sessionMode: "immersive-ar",
+           referenceSpaceType: "local-floor",
+           onError: (error) => {
+             alert(error);
+           },
+         },
+         optionalFeatures: true,
+       });
+       
+       
+      
+
+     } catch (error) {
+       console.error('Error starting AR session:', error);
+     }
      
 
       engine.runRenderLoop(() => {

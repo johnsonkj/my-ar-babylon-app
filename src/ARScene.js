@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
 import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
-import { AdvancedDynamicTexture, Button } from '@babylonjs/gui'; // Import GUI components
-import '@babylonjs/loaders'; // Babylon.js Loaders for loading glTF and glb
+import { AdvancedDynamicTexture, Button } from '@babylonjs/gui';
+import '@babylonjs/loaders';
+import { WebXRFeatureName } from '@babylonjs/core/XR/webXRFeaturesManager'; // Import for WebXRFeatureName
 
 const ARScene = () => {
   const [modelLoaded, setModelLoaded] = useState(false);
-  const [arStarted, setARStarted] = useState(false); // Track if AR has started
   const modelRef = useRef(null);
   const animationGroupRef = useRef(null);
   const canvasRef = useRef(null);
@@ -53,8 +53,18 @@ const ARScene = () => {
       const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
       light.intensity = 0.7;
 
-      // Create WebXR session
+      // Create WebXR session with pointer selection enabled
       const helper = await WebXRExperienceHelper.CreateAsync(scene);
+      const featuresManager = helper.featuresManager;
+
+      // Enable pointer selection feature for interaction in AR
+      featuresManager.enableFeature(
+        WebXRFeatureName.POINTER_SELECTION, 
+        'latest', 
+        { xrInput: helper.input }
+      );
+
+      // Start immersive AR session
       await helper.enterXRAsync('immersive-ar', 'local-floor');
       console.log('AR session started');
 
@@ -85,8 +95,6 @@ const ARScene = () => {
       window.addEventListener('resize', () => {
         engine.resize();
       });
-
-      setARStarted(true); // Mark AR session as started
     } catch (error) {
       console.error('Error starting AR session:', error);
     }
@@ -95,26 +103,24 @@ const ARScene = () => {
   return (
     <>
       <canvas id="renderCanvas" ref={canvasRef} style={{ width: '100vw', height: '100vh' }} />
-
       
-        <button
-          onClick={startARSession}
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            zIndex: 1,
-            padding: '10px 20px',
-            backgroundColor: 'rgba(0, 150, 255, 0.8)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer'
-          }}
-        >
-          Start AR
-        </button>
-      )
+      <button
+        onClick={startARSession}
+        style={{
+          position: 'absolute',
+          top: '10px',
+          left: '10px',
+          zIndex: 1,
+          padding: '10px 20px',
+          backgroundColor: 'rgba(0, 150, 255, 0.8)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer'
+        }}
+      >
+        Start AR
+      </button>
     </>
   );
 };

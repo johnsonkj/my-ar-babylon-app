@@ -2,14 +2,14 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
 import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
-import { AdvancedDynamicTexture, Button } from '@babylonjs/gui';
+import { AdvancedDynamicTexture, Button, StackPanel } from '@babylonjs/gui';
 import '@babylonjs/loaders';
 
 const ARScene = () => {
   const [modelLoaded, setModelLoaded] = useState(false);
   const modelRef = useRef(null);
-  const animationGroupRef = useRef(null);
   const canvasRef = useRef(null);
+  const buttonRef = useRef(null);
 
   const loadModel = useCallback(async () => {
     if (!modelLoaded) {
@@ -28,10 +28,6 @@ const ARScene = () => {
         modelRef.current = result.meshes[0];
         modelRef.current.position = new Vector3(0, -3.5, 8);
         modelRef.current.scaling = new Vector3(0.05, 0.05, 0.05);
-
-        if (result.animationGroups.length > 0) {
-          animationGroupRef.current = result.animationGroups[0];
-        }
         setModelLoaded(true);
       } catch (error) {
         console.error('Error loading model:', error);
@@ -54,22 +50,40 @@ const ARScene = () => {
 
       // Create WebXR session without pointer selection for mobile AR
       const helper = await WebXRExperienceHelper.CreateAsync(scene);
-
-      // Start immersive AR session
       await helper.enterXRAsync('immersive-ar', 'local-floor');
       console.log('AR session started');
 
-      // Add BabylonJS GUI button inside AR session for touch-based interaction
+      // BabylonJS GUI for button interaction
       const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-      const loadButton = Button.CreateSimpleButton("loadButton", "Load Animation Model");
-      loadButton.width = "250px";
-      loadButton.height = "140px";
-      loadButton.color = "white";
-      loadButton.background = "rgba(0, 150, 255, 0.8)";
+      const panel = new StackPanel();
+      panel.verticalAlignment = 1;
+      panel.top = "-20px";
+
+      guiTexture.addControl(panel);
+
+      // Button to load the model
+      const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
+      loadButton.width = "400px";
+      loadButton.height = "150px";
+      loadButton.thickness = 10;
+      loadButton.cornerRadius = 150;
+      loadButton.color = "#FF7979";
+      loadButton.background = "#007900";
       loadButton.onPointerUpObservable.add(() => {
         loadModel();
       });
-      guiTexture.addControl(loadButton);
+      panel.addControl(loadButton);
+
+      // Add interaction to toggle button text and color
+      loadButton.onPointerClickObservable.add(() => {
+        if (loadButton.background === "#007900") {
+          loadButton.children[0].text = "Model Loaded!";
+          loadButton.background = "#EB4D4B";
+        } else {
+          loadButton.children[0].text = "Load Model";
+          loadButton.background = "#007900";
+        }
+      });
 
       engine.runRenderLoop(() => {
         if (scene && !scene.isDisposed) {
@@ -94,7 +108,6 @@ const ARScene = () => {
   return (
     <>
       <canvas id="renderCanvas" ref={canvasRef} style={{ width: '100vw', height: '100vh' }} />
-      
       <button
         onClick={startARSession}
         style={{

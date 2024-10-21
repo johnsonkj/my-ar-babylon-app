@@ -5,7 +5,7 @@ import './App.css'; // Optional: You can add your styles here
 
 const App = () => {
   return (
-    <div>
+    <div className="App">
       <ARScene />
     </div>
   );

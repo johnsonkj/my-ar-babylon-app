@@ -14,15 +14,11 @@
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
+
 
 .App-link {
   color: #61dafb;
@@ -39,7 +35,7 @@
 
 /* In your App.css or a similar CSS file */
 
-html, body {
+html, body, #root, canvas {
   margin: 0;
   padding: 0;
   overflow: hidden;

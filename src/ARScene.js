@@ -70,12 +70,13 @@ const ARScene = () => {
 
       // Button to load the model
       const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
-      loadButton.width = "400px";
-      loadButton.height = "150px";
-      loadButton.thickness = 10;
-      loadButton.cornerRadius = 150;
+      loadButton.width = "120px";  // Pixel-based width to make sure it's visible
+      loadButton.height = "50px";  // Adjust pixel height
+      loadButton.thickness = 4;
+      loadButton.cornerRadius = 20;
       loadButton.color = "#FF7979";
       loadButton.background = "#007900";
+      loadButton.fontSize = "16px";
       loadButton.onPointerUpObservable.add(() => {
         loadModel();
       });

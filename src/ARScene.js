@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect,useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Engine, Scene } from '@babylonjs/core';
 import { WebXRExperienceHelper } from '@babylonjs/core/XR/webXRExperienceHelper';
 import { Vector3, HemisphericLight, ArcRotateCamera, SceneLoader } from '@babylonjs/core';
@@ -7,11 +7,10 @@ import '@babylonjs/loaders';
 
 const ARScene = () => {
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [isARSession, setIsARSession] = useState(false);  // State to track AR session
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
   const cameraRef = useRef(null);  // Add a camera reference
-
-  
 
   const loadModel = useCallback(async () => {
     if (!modelLoaded) {
@@ -32,8 +31,8 @@ const ARScene = () => {
         modelRef.current.scaling = new Vector3(0.05, 0.05, 0.05);
 
         if (cameraRef.current) {
-            cameraRef.current.setTarget(modelRef.current.position);  // Set the camera to target the model's position
-          }
+          cameraRef.current.setTarget(modelRef.current.position);  // Set the camera to target the model's position
+        }
 
         setModelLoaded(true);
       } catch (error) {
@@ -43,101 +42,104 @@ const ARScene = () => {
   }, [modelLoaded]);
 
   useEffect(() => {
-  const createScene = async () => {
-    try {
-      const canvas = canvasRef.current;
-      const engine = new Engine(canvas, true);
-      const scene = new Scene(engine);
-      canvas.scene = scene;
-
-      // Setup camera and light
-      const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
-      camera.attachControl(canvas, true);
-      cameraRef.current = camera;  // Store the camera reference
-      const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
-      light.intensity = 0.7;
-
-     
-
-      // BabylonJS GUI for button interaction
-      const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
-      const panel = new StackPanel();
-      panel.verticalAlignment = 1;
-      panel.top = "-20px";
-
-      guiTexture.addControl(panel);
-
-
-      // Button to load the model
-      const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
-      loadButton.width = "120px";  // Pixel-based width to make sure it's visible
-      loadButton.height = "50px";  // Adjust pixel height
-      loadButton.thickness = 4;
-      loadButton.cornerRadius = 20;
-      loadButton.color = "#FF7979";
-      loadButton.background = "#007900";
-      loadButton.fontSize = "16px";
-      loadButton.onPointerUpObservable.add(() => {
-        loadModel();
-      });
-     
-
-      // Add interaction to toggle button text and color
-      loadButton.onPointerClickObservable.add(() => {
-        if (loadButton.background === "#007900") {
-          loadButton.children[0].text = "Model Loaded!";
-          loadButton.background = "#EB4D4B";
-        } else {
-          loadButton.children[0].text = "Load Model";
-          loadButton.background = "#007900";
-        }
-      });
-
-      panel.addControl(loadButton);
-      
-      // XR Experience
-
+    const createScene = async () => {
       try {
-        // Create WebXRExperienceHelper directly
-        const xr = await scene.createDefaultXRExperienceAsync({
-         uiOptions: {
-           sessionMode: "immersive-ar",
-           referenceSpaceType: "local-floor",
-           onError: (error) => {
-             alert(error);
-           },
-         },
-         optionalFeatures: true,
-       });
-       console.log('AR session started');
-       
-      
+        const canvas = canvasRef.current;
+        const engine = new Engine(canvas, true);
+        const scene = new Scene(engine);
+        canvas.scene = scene;
 
-     } catch (error) {
-       console.error('Error starting AR session:', error);
-     }
-     
+        // Setup camera and light
+        const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
+        camera.attachControl(canvas, true);
+        cameraRef.current = camera;  // Store the camera reference
+        const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
+        light.intensity = 0.7;
 
-      engine.runRenderLoop(() => {
-        if (scene && !scene.isDisposed) {
-          scene.render();
+        // BabylonJS GUI for button interaction
+        const guiTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI", true, scene);
+        const panel = new StackPanel();
+        panel.verticalAlignment = 1;
+        panel.top = "-20px";
+
+        guiTexture.addControl(panel);
+
+        // Button to load the model
+        const loadButton = Button.CreateSimpleButton("loadButton", "Load Model");
+        
+        // Adjust button size based on AR session
+        loadButton.width = isARSession ? "250px" : "120px";  // Larger for AR, smaller for canvas
+        loadButton.height = isARSession ? "80px" : "50px";   // Larger height for AR
+        loadButton.fontSize = isARSession ? "24px" : "16px"; // Larger font in AR mode
+        
+        loadButton.thickness = 4;
+        loadButton.cornerRadius = 20;
+        loadButton.color = "#FF7979";
+        loadButton.background = "#007900";
+        loadButton.onPointerUpObservable.add(() => {
+          loadModel();
+        });
+
+        // Add interaction to toggle button text and color
+        loadButton.onPointerClickObservable.add(() => {
+          if (loadButton.background === "#007900") {
+            loadButton.children[0].text = "Model Loaded!";
+            loadButton.background = "#EB4D4B";
+          } else {
+            loadButton.children[0].text = "Load Model";
+            loadButton.background = "#007900";
+          }
+        });
+
+        panel.addControl(loadButton);
+
+        // XR Experience
+        try {
+          const xr = await scene.createDefaultXRExperienceAsync({
+            uiOptions: {
+              sessionMode: "immersive-ar",
+              referenceSpaceType: "local-floor",
+              onError: (error) => {
+                alert(error);
+              },
+            },
+            optionalFeatures: true,
+          });
+
+          if (xr.session && xr.session.mode === 'immersive-ar') {  
+            console.log("Currently in AR mode");  
+            setIsARSession(true);
+        } else {  
+            console.log("Not in AR mode");  
+            setIsARSession(false); 
+        } 
+         
+        
+
+        } catch (error) {
+          console.error('Error starting AR session:', error);
         }
-      });
-      
-      
 
-      window.addEventListener('resize', () => {
-        engine.resize();
-      });
-      
-      return scene;
+        engine.runRenderLoop(() => {
+          if (scene && !scene.isDisposed) {
+            scene.render();
+          }
+        });
 
-    } catch (error) {
-      console.error('Error starting AR session:', error);
-    }
-  };
- createScene();
-}, []);
+        window.addEventListener('resize', () => {
+          engine.resize();
+        });
+
+        return scene;
+
+      } catch (error) {
+        console.error('Error starting AR session:', error);
+      }
+    };
+    createScene();
+  }, [isARSession]);  // Re-run if the AR session state changes
+
   return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />;
 };
+
 export default ARScene;

@@ -9,7 +9,8 @@ const ARScene = () => {
   const [modelLoaded, setModelLoaded] = useState(false);
   const modelRef = useRef(null);
   const canvasRef = useRef(null);
- 
+  const cameraRef = useRef(null);  // Add a camera reference
+
   
 
   const loadModel = useCallback(async () => {
@@ -29,6 +30,11 @@ const ARScene = () => {
         modelRef.current = result.meshes[0];
         modelRef.current.position = new Vector3(0, -3.5, 8);
         modelRef.current.scaling = new Vector3(0.05, 0.05, 0.05);
+
+        if (cameraRef.current) {
+            cameraRef.current.setTarget(modelRef.current.position);  // Set the camera to target the model's position
+          }
+
         setModelLoaded(true);
       } catch (error) {
         console.error('Error loading model:', error);
@@ -47,6 +53,7 @@ const ARScene = () => {
       // Setup camera and light
       const camera = new ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 10, new Vector3(0, 0, 0), scene);
       camera.attachControl(canvas, true);
+      cameraRef.current = camera;  // Store the camera reference
       const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
       light.intensity = 0.7;
 

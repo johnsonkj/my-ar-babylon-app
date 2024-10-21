@@ -137,6 +137,6 @@ const ARScene = () => {
   };
  createScene();
 }, []);
-  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />;
 };
 export default ARScene;
